@@ -6,10 +6,8 @@ import contextlib
 import errno
 import os
 import socket
-import sys
 import traceback
 import urlparse
-import xml.etree.cElementTree as ET
 
 #C:\cygwin64\tmp>python -m Dsearch.node --bind-port 8070
 
@@ -69,13 +67,7 @@ def check(args,s,rest) :
         )
 
     if not uri or uri[0] != '/':
-        raise RuntimeError("Invalid URI")
-    file_name = os.path.normpath(
-        os.path.join(
-            args.base,
-            uri[1:],
-        )
-    )    
+        raise RuntimeError("Invalid URI")  
     return uri
     
 def server():  
@@ -100,7 +92,6 @@ def server():
                     uri=http_util.check(args,s,rest)
                     
                     
-                    parse = urlparse.urlparse(uri)
                     param = urlparse.parse_qs(urlparse.urlparse(uri).query).values()
                     normal_out=True
                     if uri.startswith('/search?'):
