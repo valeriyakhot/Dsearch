@@ -63,32 +63,7 @@ def parse_args():
     return parser.parse_args()
 
 
-def check(args, s, rest):
-    req, rest = util.recv_line(s, rest)
-    req_comps = req.split(' ', 2)
-    if req_comps[2] != constants.HTTP_SIGNATURE:
-        raise RuntimeError('Not HTTP protocol')
-    if len(req_comps) != 3:
-        raise RuntimeError('Incomplete HTTP protocol')
-
-    method, uri, signature = req_comps
-    if method != 'GET':
-        raise RuntimeError(
-            "HTTP unsupported method '%s'" % method
-        )
-
-    if not uri or uri[0] != '/':
-        raise RuntimeError("Invalid URI")
-    file_name = os.path.normpath(
-        os.path.join(
-            args.base,
-            uri[1:],
-        )
-    )
-    return uri
-
-
-def front(s, uri, param, args):
+def front(s, uri, param, args, mem):
     normal_send = True
 
     if uri[:15] == URI_SEARCH:
@@ -112,64 +87,6 @@ def front(s, uri, param, args):
 
     if normal_send:
         send_it.send(s, output)
-
-
-def server():
-    args = parse_args()
-    print('start')
-    with contextlib.closing(
-        socket.socket(
-            family=socket.AF_INET,
-            type=socket.SOCK_STREAM,
-        )
-    ) as sl:
-        sl.bind((args.bind_address, args.bind_port))
-        sl.listen(10)
-        while True:
-            s, addr = sl.accept()
-            with contextlib.closing(s):
-                status_sent = True
-                try:
-                    rest = bytearray()
-
-                    uri = http_util.check(args, s, rest)
-
-                    parse = urlparse.urlparse(uri)
-                    param = urlparse.parse_qs(urlparse.urlparse(uri).query).values()
-                    normal_send = True
-                    if uri[:15] == URI_SEARCH:
-                        if len(uri) != len(URI_SEARCH):
-                            output = client(args, URI_SEARCH, param[0][0], True)
-
-                    elif uri.startswith('/view_file?'):
-                        output = client(args, URI_ID, param[0][0], False)
-
-                    elif uri.startswith('/download_file?'):
-                        normal_send = False
-                        output = client(args, URI_ID, param[0][0], False)
-                        send_it.download(s, output)
-
-                    elif uri.startswith('/form?'):
-                        normal_send = False
-                        send_it.send_file(s, HTML_SEARCH)
-
-                    else:
-                            raise RuntimeError('Do not get known service')
-
-                    if normal_send:
-                        send_it.send(s, output)
-
-                except IOError as e:
-                    traceback.print_exc()
-                    if not status_sent:
-                        if e.errno == errno.ENOENT:
-                            send_it.send_status(s, 404, 'File Not Found', e)
-                        else:
-                            send_it.send_status(s, 500, 'Internal Error', e)
-                except Exception as e:
-                    traceback.print_exc()
-                    if not status_sent:
-                        send_it.send_status(s, 500, 'Internal Error', e)
 
 
 def client(args, uri_beg, search, xml_status):
