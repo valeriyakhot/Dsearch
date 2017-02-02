@@ -28,7 +28,7 @@ def check(args,s,rest) :
         raise RuntimeError("Invalid URI")
     return uri
     
-def server (args,func) :
+def server (args,func, mem=None) :
     print('start')
     with contextlib.closing(
         socket.socket(
@@ -49,7 +49,7 @@ def server (args,func) :
 
                     param = urlparse.parse_qs(urlparse.urlparse(uri).query).values()
                     
-                    func(s, uri, param, args)
+                    func(s, uri, param, args, mem)
                     
                 except IOError as e:
                     traceback.print_exc()
