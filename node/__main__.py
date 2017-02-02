@@ -70,55 +70,6 @@ def node(s, uri, param, args, mem):
         send_it.send_xml(s,output)
         status_sent=True
     
-def server():  
-    args = parse_args()
-    print('start')
-    with contextlib.closing(
-        socket.socket(
-            family=socket.AF_INET,
-            type=socket.SOCK_STREAM,
-        )
-    ) as sl:
-        sl.bind((args.bind_address, args.bind_port))
-        sl.listen(10)
-        mem = mem_list(args.directory)
-        while True:
-            s, addr = sl.accept()
-            with contextlib.closing(s):
-                status_sent = True
-                try:
-                    rest = bytearray()
-
-                    uri=http_util.check(args,s,rest)
-                    
-                    
-                    param = urlparse.parse_qs(urlparse.urlparse(uri).query).values()
-                    normal_out=True
-                    if uri.startswith('/search?'):
-                        files,ids= find_name(mem,param[0][0])
-                        output=xml_func.xml_form(files,ids)
-                    elif uri.startswith('/get_file?'):
-                        normal_out=False
-                        file_name = os.path.join(mem[int(param[0][0])]['root'],mem[int(param[0][0])]['filename'])
-                        send_it.send_file(s,file_name)
-                        status_sent=True
-                    else:   
-                        raise RuntimeError('Do not get known service' )
-
-                    if normal_out:
-                        send_it.send_xml(s,output)
-                        status_sent=True
-                except IOError as e:
-                    traceback.print_exc()
-                    if not status_sent:
-                        if e.errno == errno.ENOENT:
-                            send_it.send_status(s, 404, 'File Not Found', e)
-                        else:
-                            send_it.send_status(s, 500, 'Internal Error', e)
-                except Exception as e:
-                    traceback.print_exc()
-                    if not status_sent:
-                        send_it.send_status(s, 500, 'Internal Error', e)
     
 def mem_list(directory):
     mem=[]
