@@ -52,23 +52,23 @@ def parse_args():
     args.base = os.path.normpath(os.path.realpath(args.base))
     return args
     
-def check(args,s,rest) :
-    req, rest = util.recv_line(s, rest)
-    req_comps = req.split(' ', 2)
-    if req_comps[2] != constants.HTTP_SIGNATURE:
-        raise RuntimeError('Not HTTP protocol')
-    if len(req_comps) != 3:
-        raise RuntimeError('Incomplete HTTP protocol')
+    
+def node(s, uri, param, args, mem):
+    normal_out=True
+    if uri.startswith('/search?'):
+        files,ids= find_name(mem,param[0][0])
+        output=xml_func.xml_form(files,ids)
+    elif uri.startswith('/get_file?'):
+        normal_out=False
+        file_name = os.path.join(mem[int(param[0][0])]['root'],mem[int(param[0][0])]['filename'])
+        send_it.send_file(s,file_name)
+        status_sent=True
+    else:   
+        raise RuntimeError('Do not get known service' )
 
-    method, uri, signature = req_comps
-    if method != 'GET':
-        raise RuntimeError(
-            "HTTP unsupported method '%s'" % method
-        )
-
-    if not uri or uri[0] != '/':
-        raise RuntimeError("Invalid URI")  
-    return uri
+    if normal_out:
+        send_it.send_xml(s,output)
+        status_sent=True
     
 def server():  
     args = parse_args()
@@ -138,7 +138,9 @@ def find_name(mem,name):
 
     
 def main():
-    server()
+    args = parse_args()
+    mem = mem_list(args.directory)
+    http_util.server(args,node, mem)
 if __name__ == '__main__':
     main()
 
