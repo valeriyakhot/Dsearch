@@ -19,7 +19,7 @@ from ..common import send_it
 from ..common import xml_func
 from ..common import http_util
 
-HTML_SEARCH =  'search_form.html'
+HTML_SEARCH = 'search_form.html'
 URI_SEARCH = '/search?Search='
 URI_ID = '/get_file?id='
 
@@ -80,7 +80,7 @@ def front(s, uri, param, args, mem):
 
     elif uri.startswith('/form?'):
         normal_send = False
-        send_it.send_file(s, HTML_SEARCH)
+        send_it.send_file(s, param[0][0], args)
 
     else:
             raise RuntimeError('Do not get known service')
@@ -189,7 +189,7 @@ def client(args, uri_beg, search, xml_status):
 
 def main():
     args = parse_args()
-    http_util.server(args,front)
+    http_util.server(args, front)
 
 if __name__ == '__main__':
     main()
