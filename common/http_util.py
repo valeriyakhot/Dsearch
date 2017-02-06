@@ -10,7 +10,8 @@ from . import constants
 from . import util
 from . import send_it
 
-def check(args,s,rest) :
+
+def check(args, s, rest):
     req, rest = util.recv_line(s, rest)
     req_comps = req.split(' ', 2)
     if req_comps[2] != constants.HTTP_SIGNATURE:
@@ -27,8 +28,9 @@ def check(args,s,rest) :
     if not uri or uri[0] != '/':
         raise RuntimeError("Invalid URI")
     return uri
-    
-def server (args,func, mem=None) :
+
+
+def server(args, func, mem=None):
     print('start')
     with contextlib.closing(
         socket.socket(
@@ -44,13 +46,13 @@ def server (args,func, mem=None) :
                 status_sent = True
                 try:
                     rest = bytearray()
-                       
-                    uri = check(args, s, rest)
 
-                    param = urlparse.parse_qs(urlparse.urlparse(uri).query).values()
-                    
-                    func(s, uri, param, args, mem)
-                    
+                    uri = check(args, s, rest)
+                    param = urlparse.parse_qs(
+                        urlparse.urlparse(uri).query
+                    ).values()
+                    status_sent = func(s, uri, param, args, mem)
+
                 except IOError as e:
                     traceback.print_exc()
                     if not status_sent:
@@ -62,5 +64,3 @@ def server (args,func, mem=None) :
                     traceback.print_exc()
                     if not status_sent:
                         send_it.send_status(s, 500, 'Internal Error', e)
-                        
-                        

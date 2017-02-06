@@ -6,9 +6,9 @@ from . import constants
 from . import util
 
 
-def download(s,output):
+def download(s, output):
     util.send_all(
-    s,
+        s,
         (
             (
                 '%s 200 OK\r\n'
@@ -24,9 +24,17 @@ def download(s,output):
         ).encode('utf-8')
     )
 
-    util.send_all(s,output)
-    
-def send_file(s,file_name):
+    util.send_all(s, output)
+
+
+def send_file(s, file_name, args):
+
+    file_name = os.path.normpath(
+                            '%s%s' % (
+                                args.base,
+                                file_name,
+                            )
+                        )
 
     with open(file_name, 'rb') as f:
 
@@ -51,13 +59,13 @@ def send_file(s,file_name):
             ).encode('utf-8')
         )
 
-        buf=''
+        buf = ''
         while True:
             buf += f.read(constants.BLOCK_SIZE)
             if not buf:
                 break
             util.send_all(s, buf)
- 
+
 
 def send(s, output):
     util.send_all(
