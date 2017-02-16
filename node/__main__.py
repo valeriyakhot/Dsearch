@@ -7,7 +7,6 @@ import os
 #C:\cygwin64\tmp>python -m Dsearch.node --bind-port 8070
 
 from ..common import constants
-from ..common import send_it
 from ..common import xml_func
 from ..common import http_util
 
@@ -28,11 +27,6 @@ def parse_args():
         help='Bind port, default: %(default)s',
     )
     parser.add_argument(
-        '--base',
-        default='./',
-        help='Base directory to search fils in, default: %(default)s',
-    )
-    parser.add_argument(
         '--directory',
         default='./',
         help='Base directory to search fils in, default: %(default)s',
@@ -43,30 +37,41 @@ def parse_args():
         help='URL to use',
     )
     args = parser.parse_args()
-    args.base = os.path.normpath(os.path.realpath(args.base))
     return args
 
 
 def node(s, uri, param, args, mem):
-    normal_out = True
     if uri.startswith('/search?'):
         files, ids = find_name(mem, param[0][0])
         output = xml_func.xml_form(files, ids)
+
+
+        ret = {
+            'status': '200',
+            'message': 'OK',
+            'headers': {
+                'Content-Type': 'text/xml',
+            }, 
+            'content': output,
+        }
+        
     elif uri.startswith('/get_file?'):
-        normal_out = False
         file_name = os.path.join(
             mem[int(param[0][0])]['root'],
             mem[int(param[0][0])]['filename'],
         )
-        send_it.send_file(s, file_name)
-        status_sent = True
+        ret = {
+            'status': '200',
+            'message': 'OK',
+            'file_name': file_name,
+            'headers': {
+                'Content-Type': 'text/html',
+            }
+        }
     else:
         raise RuntimeError('Do not get known service')
 
-    if normal_out:
-        send_it.send_xml(s, output)
-        status_sent = True
-    return status_sent
+    return ret
 
 
 def mem_list(directory):
