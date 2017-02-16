@@ -2,6 +2,7 @@
 
 import contextlib
 import errno
+import os
 import socket
 import traceback
 import urlparse
@@ -30,46 +31,47 @@ def check(args, s, rest):
     return uri
 
 
-def send_status(s, code, message, extra):
-    util.send_all(
-        s,
-        (
-            (
+def str_headers(headers):
+    head=""
+    for key,val in headers.iteritems():
+        head+="%s: %s\r\n"%(key,val)
+    return head
+
+    
+def build_message(s,dic):
+    headers = dic.get('headers', {})
+    if 'content' in dic:
+        dic['headers']['Content-Length']=len(dic.get('content'))
+    
+    try:
+        f=None
+        if 'file_name' in dic:
+            f=open(dic.get('file_name'), 'rb')
+            dic['headers']['Content-Length'] = os.fstat(f.fileno()).st_size
+            
+        ret = (
                 '%s %s %s\r\n'
-                'Content-Type: text/plain\r\n'
-                '\r\n'
-                'Error %s %s\r\n'
                 '%s'
+                '\r\n'
             ) % (
                 constants.HTTP_SIGNATURE,
-                code,
-                message,
-                code,
-                message,
-                extra,
+                dic.get('status', '200'),
+                dic.get('message', 'OK'),
+                str_headers(dic['headers']),
             )
-        ).encode('utf-8')
-    )
-
-
-def build_message(*msg):
-
-    headers = d.get(headers, {})
-    if 'content' in dict:
-        headers['Content-Length'] = len(d['content'])
-
-    ret = '%s 200 OK\r\n'
-            'Content-Length: %s\r\n'
-            'Content-Type: %s\r\n'
-            'Content-Disposition: attachment; filename=b.txt;\r\n'
-    ret = constants.HTTP_SIGNATURE+''
-    if len(msg) == 1:
-        dic = msg[0]
-        ret += dic.get('status', '200') + dic.get('message', 'OK') + constants.CRLF
-        if 'content' in dic:
-            ret += 'Content-Length:' + str(len(dic.get('content')))
-        if 
-        
+        util.send_all(s,ret.encode('utf-8'))
+        if 'file_name' in dic:
+            buf = ''
+            while True:
+                print (buf)
+                buf = f.read(constants.BLOCK_SIZE)
+                if not buf:
+                    break
+                util.send_all(s,buf)
+        else:
+            util.send_all(s,dic.get('content'))
+    finally:
+        f.close()
 
 
 def server(args, func, mem=None):
@@ -93,16 +95,48 @@ def server(args, func, mem=None):
                     param = urlparse.parse_qs(
                         urlparse.urlparse(uri).query
                     ).values()
-                    ret = func(s, uri, param, args, mem)
-
+                    print uri
+                    build_message(s,func(s, uri, param, args, mem))
+                    status_sent=True
                 except IOError as e:
                     traceback.print_exc()
                     if not status_sent:
                         if e.errno == errno.ENOENT:
-                            send_status(s, 404, 'File Not Found', e)
+                            code=404
+                            message= 'File Not Found'
+                            status={
+                                'code': code,
+                                'message': message,
+                                'headers': {
+                                 'Content-Type': 'text/plain',
+                                },
+                                'content': 'Error %s %s\r\n%s'%(code,message,e),
+                            }
+                            
+                            build_message(status)
                         else:
-                            send_status(s, 500, 'Internal Error', e)
+                            code=500
+                            message= 'Internal Error'
+                            status={
+                                'code': code,
+                                'message': message,
+                                'headers': {
+                                 'Content-Type': 'text/plain',
+                                },
+                                'content': 'Error %s %s\r\n%s'%(code,message,e),
+                            }
+                            build_message(status)
                 except Exception as e:
                     traceback.print_exc()
                     if not status_sent:
-                        send_status(s, 500, 'Internal Error', e)
+                        code=500
+                        message= 'Internal Error'
+                        status={
+                            'code': code,
+                            'message': message,
+                            'headers': {
+                             'Content-Type': 'text/plain',
+                            },
+                            'content': 'Error %s %s\r\n%s'%(code,message,e),
+                        }
+                        build_message(status)
