@@ -15,7 +15,6 @@ import xml.etree.cElementTree as ET
 
 from ..common import constants
 from ..common import util
-from ..common import send_it
 from ..common import xml_func
 from ..common import http_util
 
@@ -64,29 +63,61 @@ def parse_args():
 
 
 def front(s, uri, param, args, mem):
-    normal_send = True
-
+    print uri
     if uri[:15] == URI_SEARCH:
         if len(uri) != len(URI_SEARCH):
             output = client(args, URI_SEARCH, param[0][0], True)
-
+        ret = {
+            'status': '200',
+            'message': 'OK',
+            'headers': {
+                'Content-Type': 'text/html',
+            }, 
+            'content': output,
+        }
     elif uri.startswith('/view_file?'):
         output = client(args, URI_ID, param[0][0], False)
-
+        ret = {
+            'status': '200',
+            'message': 'OK',
+            'headers': {
+                'Content-Type': 'text/html',
+            }, 
+            'content': output,
+        }
     elif uri.startswith('/download_file?'):
-        normal_send = False
         output = client(args, URI_ID, param[0][0], False)
-        send_it.download(s, output)
+        ret = {
+            'status': '200',
+            'message': 'OK',
+            'headers': {
+                'Content-Disposition': 'attachment; filename=b.txt;',
+                'Content-Type': 'text/html',
+            }, 
+            'content': output,
+        }
 
     elif uri.startswith('/form?'):
-        normal_send = False
-        send_it.send_file(s, param[0][0], args)
-
+        ret = {
+            'status': '200',
+            'message': 'OK',
+            'file_name':param[0][0],
+            'headers': {
+                'Content-Type': 'text/html',
+            }
+        }
     else:
-            raise RuntimeError('Do not get known service')
+        ret={
+            'code': 404,
+            'message': 'File not found',
+            'headers': {
+             'Content-Type': 'text/plain',
+            },
+            'content': 'Error : not known service:%s'%(uri),
+        }
 
-    if normal_send:
-        send_it.send(s, output)
+   
+    return ret
 
 
 def client(args, uri_beg, search, xml_status):
