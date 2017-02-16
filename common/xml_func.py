@@ -12,7 +12,7 @@ def xml_to_html(st):
         name = result.get('name')
         id=result.get('id')
         html+='  <tr> <td>%s</td> <td align="middle"> <a href="/download_file?id=%s">&lt;download&gt;</a> <a href="/view_file?id=%s">&lt;view&gt;</a></td>  </tr>' %(name,id,id)
-    html+='<a href="/form?">&lt;Back&gt;</a>'+HTML_END
+    html+='<a href="/form?file=search_form.html">&lt;Back&gt;</a>'+HTML_END
     return html
     
 def xml_form(files,ids):
