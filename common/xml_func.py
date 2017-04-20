@@ -1,21 +1,18 @@
 # -*- coding: utf-8 -*-
 import xml.etree.cElementTree as ET
 
-HTML_TABLE_HEADER='''<!DOCTYPE html><html><body><table style="width:35%" ; border= "2px solid #dddddd">  <tr>    <th align="left"> Filename </th>    <th align="left">Option</th>   </tr>'''
-HTML_END='''</table></body></html>'''
 
-def xml_to_html(st):
+def xml_to_html(st,node):
     st=str(st)
     root=ET.fromstring(st)
-    html=HTML_TABLE_HEADER
+    html=''
     for result in root.findall('result'):
         name = result.get('name')
         id=result.get('id')
-        html+='  <tr> <td>%s</td> <td align="middle"> <a href="/download_file?id=%s">&lt;download&gt;</a> <a href="/view_file?id=%s">&lt;view&gt;</a></td>  </tr>' %(name,id,id)
-    html+='<a href="/form?file=search_form.html">&lt;Back&gt;</a>'+HTML_END
+        html+='  <tr> <td>%s</td> <td align="middle"> <a href="/download_file?id=%s&node=%s">&lt;download&gt;</a> <a href="/view_file?id=%s&node=%s">&lt;view&gt;</a></td>  </tr>' %(name, id, node, id, node)
     return html
     
-def xml_form(files,ids):
+def xml_form(files, ids):
     root = ET.Element('root')
     
     if len(files)>0:
