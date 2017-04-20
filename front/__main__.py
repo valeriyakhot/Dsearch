@@ -21,6 +21,8 @@ from ..common import http_util
 HTML_SEARCH = 'search_form.html'
 URI_SEARCH = '/search?Search='
 URI_ID = '/get_file?id='
+HTML_TABLE_HEADER='''<!DOCTYPE html><html><body><table style="width:35%" ; border= "2px solid #dddddd">  <tr>    <th align="left"> Filename </th>    <th align="left">Option</th>   </tr>'''
+HTML_END='''</table></body></html>'''
 
 
 def parse_args():
@@ -63,159 +65,93 @@ def parse_args():
 
 
 def front(s, uri, param, args, mem):
-    print uri
-    if uri[:15] == URI_SEARCH:
-        if len(uri) != len(URI_SEARCH):
-            output = client(args, URI_SEARCH, param[0][0], True)
-        ret = {
-            'status': '200',
-            'message': 'OK',
-            'headers': {
-                'Content-Type': 'text/html',
-            }, 
-            'content': output,
-        }
-    elif uri.startswith('/view_file?'):
-        output = client(args, URI_ID, param[0][0], False)
-        ret = {
-            'status': '200',
-            'message': 'OK',
-            'headers': {
-                'Content-Type': 'text/html',
-            }, 
-            'content': output,
-        }
-    elif uri.startswith('/download_file?'):
-        output = client(args, URI_ID, param[0][0], False)
-        ret = {
-            'status': '200',
-            'message': 'OK',
-            'headers': {
-                'Content-Disposition': 'attachment; filename=b.txt;',
-                'Content-Type': 'text/html',
-            }, 
-            'content': output,
-        }
-
-    elif uri.startswith('/form?'):
-        ret = {
-            'status': '200',
-            'message': 'OK',
-            'file_name':param[0][0],
-            'headers': {
-                'Content-Type': 'text/html',
+    nodes = {
+        '127.0.0.1:8040': {
+            'ip': '127.0.0.1',
+            'port': 8040,
+        },
+        '127.0.0.1:8070': {
+            'ip': '127.0.0.1',
+            'port': 8070,
+         }
+     }
+    if  nodes:
+        if uri.startswith(URI_SEARCH):
+            if len(uri) != len(URI_SEARCH):
+                out = http_util.client(args, URI_SEARCH, param[0][0], nodes)
+                output=HTML_TABLE_HEADER
+                for key in nodes:
+                    for o in out:
+                        output+=xml_func.xml_to_html(o, key)
+                output+='<a href="/form?file=search_form.html">&lt;Back&gt;</a>'+HTML_END
+            ret = {
+                'status': '200',
+                'message': 'OK',
+                'headers': {
+                    'Content-Type': 'text/html',
+                }, 
+                'content': output,
             }
-        }
+        elif uri.startswith('/view_file?'):
+            pars_uri=urlparse.parse_qs(uri[11:])
+            node=pars_uri.get('node')[0]
+            id=pars_uri.get('id')[0]
+            print "NODE   %s"%{str(node):nodes[str(node)]}
+            output = http_util.client(args, URI_ID, id, {str(node):nodes[str(node)]})
+            print 'FRONT  OUTPUT    %s'%(output)
+            ret = {
+                'status': '200',
+                'message': 'OK',
+                'headers': {
+                    'Content-Type': 'text/html',
+                }, 
+                'content': str(output[0]),
+            }
+        elif uri.startswith('/download_file?'):
+            pars_uri=urlparse.parse_qs(uri[15:])
+            node=pars_uri.get('node')[0]
+            id=pars_uri.get('id')[0]
+            output = http_util.client(args, URI_ID, id, {str(node):nodes[str(node)]})
+            ret = {
+                'status': '200',
+                'message': 'OK',
+                'headers': {
+                    'Content-Disposition': 'attachment; filename=b.txt;',
+                    'Content-Type': 'text/html',
+                }, 
+                'content': str(output[0]),
+            }
+
+        elif uri.startswith('/form?'):
+            ret = {
+                'status': '200',
+                'message': 'OK',
+                'file_name':param[0][0],
+                'headers': {
+                    'Content-Type': 'text/html',
+                }
+            }
+        else:
+            ret={
+                'code': 404,
+                'message': 'File not found',
+                'headers': {
+                 'Content-Type': 'text/plain',
+                },
+                'content': 'Error : not known service:%s'%(uri),
+            }
     else:
         ret={
-            'code': 404,
-            'message': 'File not found',
-            'headers': {
-             'Content-Type': 'text/plain',
-            },
-            'content': 'Error : not known service:%s'%(uri),
-        }
+                'code':500,
+                'message': 'No search services',
+                'headers': {
+                 'Content-Type': 'text/plain',
+                },
+                'content': 'Error :No search services',
+            }
 
    
     return ret
-
-
-def client(args, uri_beg, search, xml_status):
-
-    url = util.spliturl(args.url)
-    if url.scheme != 'http':
-        raise RuntimeError("Invalid URL scheme '%s'" % url.scheme)
-
-    with contextlib.closing(
-        socket.socket(
-            family=socket.AF_INET,
-            type=socket.SOCK_STREAM,
-        )
-    ) as s:
-        s.connect((
-            url.hostname,
-            url.port if url.port else constants.DEFAULT_HTTP_PORT,
-        ))
-        uri = uri_beg+search
-        util.send_all(
-            s,
-            (
-                (
-                    'GET %s HTTP/1.1\r\n'
-                    'Host: %s\r\n'
-                    '\r\n'
-                ) % (
-                    uri,
-                    args.url+uri,
-                )
-            ).encode('utf-8'),
-        )
-
-        rest = bytearray()
-
-        #
-        # Parse status line
-        #
-        status, rest = util.recv_line(s, rest)
-        status_comps = status.split(' ', 2)
-        if status_comps[0] != constants.HTTP_SIGNATURE:
-            raise RuntimeError('Not HTTP protocol')
-        if len(status_comps) != 3:
-            raise RuntimeError('Incomplete HTTP protocol')
-
-        signature, code, message = status_comps
-        if code != '200':
-            raise RuntimeError('HTTP failure %s: %s' % (code, message))
-
-        content_length = None
-        for i in range(constants.MAX_NUMBER_OF_HEADERS):
-            line, rest = util.recv_line(s, rest)
-            if not line:
-                break
-
-            name, value = util.parse_header(line)
-            if name == 'Content-Length':
-                content_length = int(value)
-        else:
-            raise RuntimeError('Too many headers')
-
-        try:
-            if content_length is None:
-
-                buf = ''
-                while True:
-                    buf += s.recv(constants.BLOCK_SIZE)
-                    if not buf:
-                        break
-                if xml_status:
-                    output = xml_func.xml_to_html(buf)
-                else:
-                    output = buf
-                return output
-            else:
-                buff = ''
-
-                left_to_read = content_length
-                while left_to_read > 0:
-                    if not rest:
-                        t = s.recv(constants.BLOCK_SIZE)
-                        if not t:
-                            raise RuntimeError(
-                                'Disconnected while waiting for content'
-                            )
-                        rest += t
-                    buf, rest = rest[:left_to_read], rest[left_to_read:]
-                    buff += buf
-                    left_to_read -= len(buf)
-                if xml_status:
-                    output = xml_func.xml_to_html(buff)
-                else:
-                    output = buff
-
-                return output
-
-        finally:
-            pass
 
 
 def main():
