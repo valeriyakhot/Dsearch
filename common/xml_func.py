@@ -9,7 +9,13 @@ def xml_to_html(st,node):
     for result in root.findall('result'):
         name = result.get('name')
         id=result.get('id')
-        html+='  <tr> <td>%s</td> <td align="middle"> <a href="/download_file?id=%s&node=%s">&lt;download&gt;</a> <a href="/view_file?id=%s&node=%s">&lt;view&gt;</a></td>  </tr>' %(name, id, node, id, node)
+        html+=''' <tr> 
+                    <td align="middle"; style="background-color:white">%s</td>
+                    <td align="middle"; style="background-color:white"> 
+                    <a href="/download_file?id=%s&node=%s">&lt;download&gt;</a>
+                    <a href="/view_file?id=%s&node=%s">&lt;view&gt;</a>
+                    </td>  
+                    </tr>''' %(name, id, node, id, node)
     return html
     
 def xml_form(files, ids):
