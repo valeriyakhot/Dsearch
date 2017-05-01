@@ -16,61 +16,56 @@ from . import util
 from . import xml_func
 
 MYPORT = 8123
-MYGROUP_4 = '225.0.0.250'
+IP = '225.0.0.250'
 MYTTL = 1 
-def node_in(nodes, ip, t) :
-    length=len(nodes)
-    for n in range(length):
-        if nodes[n]['ip'] == ip:
-            nodes[n]['lasttime']=t.strftime('%M:%S')
-            return True
-    return False
     
-    
-def listener():
-    nodes=[]
+def sender(nodes,port):
+    s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+
+    s.setsockopt(socket.IPPROTO_IP, socket.IP_MULTICAST_TTL, 1)
+    s.sendto('node,%s'%(port),(IP,MYPORT))
+    #print 'SENT'
+
+
+
+def listener(nodes,port):
     s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
 
     s.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
 
     s.bind(('', MYPORT))
-    mreq = struct.pack("4sl", socket.inet_aton(MYGROUP_4), socket.INADDR_ANY)
+    mreq = struct.pack("4sl", socket.inet_aton(IP), socket.INADDR_ANY)
     s.setsockopt(socket.IPPROTO_IP, socket.IP_ADD_MEMBERSHIP, mreq)
     s.settimeout(2)
-    while True:
-        print 'stuck in receive'
-        try:
-            data, sender = s.recvfrom(1500)
-            print 'SENDER'+ str(sender[0])+str(sender[1])
-            if not data:
-                break
-            while data[-1:] == '\0': data = data[:-1]
-            data=data.split(',')
-            node_list(sender, nodes)
-        except socket.timeout as e:
-            print e
-            break
-    print 'done'
+    try:
+        data, sender = s.recvfrom(1400)
+        while data[-1:] == '\0': data = data[:-1]
+        data=data.split(',')
+        if data[0]=='node':
+            node_list(sender[0], data[1], nodes)
+    except socket.timeout as e:
+        print e
 
         
     
 def sub_nodes(nodes):
+    subs=[]
     t=datetime.datetime.now().time()
-    for i in range(len(nodes)):
-        time=nodes[i].get('lasttime').split(':')
+    for node in nodes:
+        #print 'n  o  d  e   %s'%node
+        time=nodes[node]['lasttime'].split(':')
         sec=int(time[0])*60+int(time[1])
         now=int(t.strftime('%M'))*60+int(t.strftime('%S'))
         if (now-sec)>=10:
-            print ('len before'+str(len(nodes)))
-            print i
-            nodes.pop(i)
-            i-=1
+            subs.append(node)
+    for sub in subs:
+        nodes.pop(sub)
 
 
-def node_list(data,nodes):
+def node_list(ip, port, nodes):
     t=datetime.datetime.now().time()
-    if not node_in(nodes, data[0], t):
-        nodes.append({'ip': data[0], 'port': data[1], 'lasttime':t.strftime('%M:%S')})     
+    node='%s:%s'%(ip,port)
+    nodes[node]={'ip': ip, 'port': int(port), 'lasttime':t.strftime('%M:%S')} 
     sub_nodes(nodes)
     return nodes
         
@@ -138,18 +133,29 @@ def build_message(s,dic):
             f.close()
 
 
-def server(args, func, mem=None):
+def server(args, func, multi_func, mem=None):
     print('start')
+    nodes={}
     with contextlib.closing(
         socket.socket(
             family=socket.AF_INET,
             type=socket.SOCK_STREAM,
         )
     ) as sl:
+        sl.settimeout(2)
         sl.bind((args.bind_address, args.bind_port))
         sl.listen(10)
+        
         while True:
-            s, addr = sl.accept()
+            s=None
+            while s == None:
+                try:
+                    s, addr = sl.accept()
+                except socket.timeout as e:
+                    print e
+                multi_func(nodes,args.bind_port)
+                #print 'NODES    %s'%nodes
+            #print 'NODES    %s'%nodes
             with contextlib.closing(s):
                 status_sent = True
                 try:
@@ -159,8 +165,12 @@ def server(args, func, mem=None):
                     param = urlparse.parse_qs(
                         urlparse.urlparse(uri).query
                     ).values()
-                    print uri
-                    build_message(s,func(s, uri, param, args, mem))
+                    #print uri
+                    dic={
+                        'memory':mem, 
+                        'nodes':nodes
+                    }
+                    build_message(s,func(s, uri, param, args, dic))
                     status_sent=True
                 except IOError as e:
                     traceback.print_exc()
@@ -178,7 +188,7 @@ def server(args, func, mem=None):
                             }
                             
                             build_message(status)
-                            print 'work'
+                            #print 'work'
                         else:
                             code=500
                             message= 'Internal Error'
@@ -209,7 +219,7 @@ def server(args, func, mem=None):
 def client (args, uri_beg, search, nodes):
     output=[]
     for node in nodes:
-        print 'NODE     %s'%(node)
+        print 'NODE port    %s'%(type(nodes[node].get('port')))
         with contextlib.closing(
             socket.socket(
                 family=socket.AF_INET,
@@ -265,7 +275,7 @@ def client (args, uri_beg, search, nodes):
 
             try:
                 if content_length is None:
-                    print 'IM HEEERRRREEE'
+                    #print 'IM HEEERRRREEE'
                     buf = ''
                     while True:
                         buf += s.recv(constants.BLOCK_SIZE)
