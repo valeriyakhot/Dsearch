@@ -11,7 +11,7 @@ import traceback
 import urlparse
 import xml.etree.cElementTree as ET
 
-#C:\cygwin64\tmp>python -m Dsearch.front --url http://localhost:8070/\ --bind-port 8080 --node-port 8070
+#C:\cygwin64\tmp>python -m Dsearch.front --url http://localhost:8070/\ --bind-port 8080 
 
 from ..common import constants
 from ..common import util
@@ -21,8 +21,19 @@ from ..common import http_util
 HTML_SEARCH = 'search_form.html'
 URI_SEARCH = '/search?Search='
 URI_ID = '/get_file?id='
-HTML_TABLE_HEADER='''<!DOCTYPE html><html><body><table style="width:35%" ; border= "2px solid #dddddd">  <tr>    <th align="left"> Filename </th>    <th align="left">Option</th>   </tr>'''
-HTML_END='''</table></body></html>'''
+HTML_TABLE_HEADER='''<!DOCTYPE html>
+                                    <html>
+                                    <body style="background: rgb(255,255,255)">
+                                    <center>
+                                    <table style="width:35%" ; border= "2px solid #dddddd"> 
+                                    <tr>    <th align="left" ; style="background-color:aqua"> Filename 
+                                    </th>  
+                                    <th align="left" ; style="background-color:aqua">Option</th> 
+                                    </tr>'''
+HTML_END='''</table>
+                  </center>
+                  </body>
+                  </html>'''
 
 
 def parse_args():
@@ -31,7 +42,7 @@ def parse_args():
     parser = argparse.ArgumentParser()
     parser.add_argument(
         '--base',
-        default='.',
+        default='./Dsearch/front/%s',
         help='Base directory to search fils in, default: %(default)s',
     )
     parser.add_argument(
@@ -41,12 +52,6 @@ def parse_args():
     )
     parser.add_argument(
         '--bind-port',
-        default=0,
-        type=int,
-        help='Bind port, default: %(default)s',
-    )
-    parser.add_argument(
-        '--node-port',
         default=0,
         type=int,
         help='Bind port, default: %(default)s',
@@ -64,17 +69,18 @@ def parse_args():
     return parser.parse_args()
 
 
-def front(s, uri, param, args, mem):
-    nodes = {
-        '127.0.0.1:8040': {
-            'ip': '127.0.0.1',
-            'port': 8040,
-        },
-        '127.0.0.1:8070': {
-            'ip': '127.0.0.1',
-            'port': 8070,
-         }
-     }
+def front(s, uri, param, args, dic):
+    nodes = dic['nodes']
+    # {
+        # '127.0.0.1:8040': {
+            # 'ip': '127.0.0.1',
+            # 'port': 8040,
+        # },
+        # '127.0.0.1:8070': {
+            # 'ip': '127.0.0.1',
+            # 'port': 8070,
+         # }
+     # }
     if  nodes:
         if uri.startswith(URI_SEARCH):
             if len(uri) != len(URI_SEARCH):
@@ -96,9 +102,9 @@ def front(s, uri, param, args, mem):
             pars_uri=urlparse.parse_qs(uri[11:])
             node=pars_uri.get('node')[0]
             id=pars_uri.get('id')[0]
-            print "NODE   %s"%{str(node):nodes[str(node)]}
+            #print "NODE   %s"%{str(node):nodes[str(node)]}
             output = http_util.client(args, URI_ID, id, {str(node):nodes[str(node)]})
-            print 'FRONT  OUTPUT    %s'%(output)
+            #print 'FRONT  OUTPUT    %s'%(output)
             ret = {
                 'status': '200',
                 'message': 'OK',
@@ -126,7 +132,7 @@ def front(s, uri, param, args, mem):
             ret = {
                 'status': '200',
                 'message': 'OK',
-                'file_name':param[0][0],
+                'file_name':args.base%param[0][0],
                 'headers': {
                     'Content-Type': 'text/html',
                 }
@@ -156,7 +162,7 @@ def front(s, uri, param, args, mem):
 
 def main():
     args = parse_args()
-    http_util.server(args, front)
+    http_util.server(args, front, http_util.listener)
 
 if __name__ == '__main__':
     main()
