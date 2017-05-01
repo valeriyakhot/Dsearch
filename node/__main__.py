@@ -40,12 +40,12 @@ def parse_args():
     return args
 
 
-def node(s, uri, param, args, mem):
-    print 'working'
+def node(s, uri, param, args, dic):
+    #print 'working'
     if uri.startswith('/search?'):
-        files, ids = find_name(mem, param[0][0])
+        files, ids = find_name(dic['memory'], param[0][0])
         output = xml_func.xml_form(files, ids)
-        print 'searching'
+        #print 'searching'
 
         ret = {
             'status': '200',
@@ -57,10 +57,10 @@ def node(s, uri, param, args, mem):
         }
         
     elif uri.startswith('/get_file?'):
-        print 'give file'
+        #print 'give file'
         file_name = os.path.join(
-            mem[int(param[0][0])]['root'],
-            mem[int(param[0][0])]['filename'],
+            dic['memory'][int(param[0][0])]['root'],
+            dic['memory'][int(param[0][0])]['filename'],
         )
         ret = {
             'status': '200',
@@ -97,6 +97,6 @@ def find_name(mem, name):
 def main():
     args = parse_args()
     mem = mem_list(args.directory)
-    http_util.server(args, node, mem)
+    http_util.server(args, node, http_util.sender, mem)
 if __name__ == '__main__':
     main()
