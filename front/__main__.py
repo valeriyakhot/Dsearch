@@ -11,12 +11,15 @@ import traceback
 import urlparse
 import xml.etree.cElementTree as ET
 
-#C:\cygwin64\tmp>python -m Dsearch.front --url http://localhost:8070/\ --bind-port 8080 
+#HOW TO RUN : python -m Dsearch.front --url http://localhost:8070/\ --bind-port 8080 
 
 from ..common import constants
 from ..common import util
 from ..common import xml_func
 from ..common import http_util
+from ..common import xml_funcs
+from ..common import httpServer
+from . import services
 
 HTML_SEARCH = 'search_form.html'
 URI_SEARCH = '/search?Search='
@@ -162,7 +165,19 @@ def front(s, uri, param, args, dic):
 
 def main():
     args = parse_args()
-    http_util.server(args, front, http_util.listener)
+    Server = httpServer.Http_server(args)
+    download = services.Download_service(args)
+    view = services.View_service(args)
+    form = services.Form_service(args)
+    search = services.Search_service(args)
+    listener = services.Listener()
+    Server.register('/view_file?', view)
+    Server.register('/form?', form)
+    Server.register('/download_file?', download)
+    Server.register('/search?', search)
+    Server.register('None?', listener)
+    Server.server(Server)
+    #http_util.server(args, front, http_util.listener)
 
 if __name__ == '__main__':
     main()
