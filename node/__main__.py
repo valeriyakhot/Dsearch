@@ -4,11 +4,19 @@
 import argparse
 import os
 
-#C:\cygwin64\tmp>python -m Dsearch.node --bind-port 8070
+#HOW TO RUN : python -m Dsearch.node --bind-port 8070
 
 from ..common import constants
 from ..common import xml_func
 from ..common import http_util
+from ..common import constants
+from ..common import util
+from ..common import xml_func
+from ..common import http_util
+from ..common import xml_funcs
+from ..common import httpServer
+from ..common import memory
+from . import services
 
 
 def parse_args():
@@ -73,7 +81,6 @@ def node(s, uri, param, args, dic):
     else:
         raise RuntimeError('Do not get known service')
 
-    return ret
 
 
 def mem_list(directory):
@@ -96,7 +103,17 @@ def find_name(mem, name):
 
 def main():
     args = parse_args()
-    mem = mem_list(args.directory)
-    http_util.server(args, node, http_util.sender, mem)
+    Memory = memory.Memory(args)
+    mem = Memory.mem_list()
+    search = services.Search_service(mem)
+    id = services.Id_service(mem)
+    sender = services.Sender()
+    Server = httpServer.Http_server(args)
+    Server.register('/get_file?', id)
+    Server.register('/search?', search)
+    Server.register('None?', sender)
+    Server.server(Server)
+    #mem = mem_list(args.directory)
+    #http_util.server(args, node, http_util.sender, mem)
 if __name__ == '__main__':
     main()
