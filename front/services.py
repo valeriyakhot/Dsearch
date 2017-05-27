@@ -33,7 +33,7 @@ IP = '225.0.0.250'
 MYTTL = 1
 
 
-class Download_service (httpService.Http_service, object):
+class Download_service (httpService.Http_service):
 
     def __init__(self, url):
         self.url = url
@@ -71,7 +71,7 @@ class Download_service (httpService.Http_service, object):
         return ret
 
 
-class Search_service (httpService.Http_service, object):
+class Search_service (httpService.Http_service):
 
     def __init__(self, url):
         self.url = url
@@ -115,7 +115,7 @@ class Search_service (httpService.Http_service, object):
         return ret
 
 
-class View_service (httpService.Http_service, object):
+class View_service (httpService.Http_service):
 
     def __init__(self, url):
         self.url = url
@@ -152,7 +152,7 @@ class View_service (httpService.Http_service, object):
         return ret
 
 
-class Form_service (httpService.Http_service, object):
+class Form_service (httpService.Http_service):
 
     def __init__(self, base):
         self.base = base
