@@ -1,18 +1,10 @@
 
 import contextlib
-import datetime
-import errno
-import os
 import socket
-import struct
-import sys
-import traceback
-import urlparse
 
 from . import constants
-from . import send_it
 from . import util
-from . import xml_func
+
 
 class Client(object):
 
@@ -21,13 +13,12 @@ class Client(object):
         self.ip = ip
         self.port = port
 
-
-    def client (self, uri):
+    def client(self, uri):
         output = ''
         with contextlib.closing(
             socket.socket(
-                family = socket.AF_INET,
-                type = socket.SOCK_STREAM,
+                family=socket.AF_INET,
+                type=socket.SOCK_STREAM,
             )
         ) as s:
             s.connect((
@@ -50,9 +41,6 @@ class Client(object):
 
             rest = bytearray()
 
-            #
-            # Parse status line
-            #
             status, rest = util.recv_line(s, rest)
             status_comps = status.split(' ', 2)
             if status_comps[0] != constants.HTTP_SIGNATURE:
@@ -78,13 +66,12 @@ class Client(object):
 
             try:
                 if content_length is None:
-                    #print 'IM HEEERRRREEE'
                     buf = ''
                     while True:
                         buf += s.recv(constants.BLOCK_SIZE)
                         if not buf:
                             break
-                    
+
                     output = buf
 
                     return output
@@ -105,7 +92,7 @@ class Client(object):
                         left_to_read -= len(buf)
 
                     output = buff
-                #print 'OUTPUT      %s'%output
+
             finally:
                 pass
         return output
