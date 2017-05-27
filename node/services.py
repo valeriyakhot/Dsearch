@@ -11,7 +11,7 @@ IP = '225.0.0.250'
 MYTTL = 1
 
 
-class Search_service (httpService.Http_service, object):
+class Search_service (httpService.Http_service):
 
     def __init__(self, memory):
         self.memory = memory
@@ -42,7 +42,7 @@ class Search_service (httpService.Http_service, object):
         return files, ids
 
 
-class Id_service (httpService.Http_service, object):
+class Id_service (httpService.Http_service):
 
     def __init__(self, memory):
         self.memory = memory
@@ -64,7 +64,7 @@ class Id_service (httpService.Http_service, object):
         return ret
 
 
-class Sender (httpService.Http_service, object):
+class Sender (httpService.Http_service):
 
     def __init__(self):
         pass
