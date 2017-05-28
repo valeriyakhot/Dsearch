@@ -7,9 +7,12 @@ import urlparse
 from ..common import xml_funcs
 from ..common import httpService
 from . import node_client
-HTML_SEARCH = 'search_form.html'
+
+## the uri of id service of nodes
 URI_SEARCH = '/search?Search='
+## the uri of id service of nodes
 URI_ID = '/get_file?id='
+## the beginning of html form of a result's table
 HTML_TABLE_HEADER = '''<!DOCTYPE html>
                                     <html>
                                     <body style="background: rgb(255,255,255)">
@@ -23,24 +26,29 @@ HTML_TABLE_HEADER = '''<!DOCTYPE html>
                                     <th align="left" ;
                                     style="background-color:aqua">Option</th>
                                     </tr>'''
+## the end of html form of a result's table
 HTML_END = '''</table>
                   </center>
                   </body>
                   </html>'''
-
+## multicast port
 MULTI_PORT = 8123
+## multicast ip address
 IP = '225.0.0.250'
+## how much connections on multicast
 MYTTL = 1
 
-
+## Download service
 class Download_service (httpService.Http_service):
 
+    ## Constructor.
     def __init__(self, url):
         self.url = url
 
-     ## Create a dictionary of HTTP protocol to download a file.
-     # @param params dict of params that the function needs
-     # @param object of a class to use other functions
+    ## Download service
+    # @param params dict of params that the function needs
+    # Create a dictionary of HTTP protocol to download a file
+    # by asking a file from node server 
     def service(self, params, object):
         if params['nodes'] != {}:
             pars_uri = urlparse.parse_qs(params['uri'][15:])
@@ -70,15 +78,15 @@ class Download_service (httpService.Http_service):
             }
         return ret
 
-
+## Search service
 class Search_service (httpService.Http_service):
 
+    ## Constructor.
     def __init__(self, url):
         self.url = url
 
     ## Search service of front-end server
     # @param params dict of params that the function needs
-    # @param object of a class to use other functions
     # The function send to nodes a search ask 
     # after get the results it make a html table
     def service(self, params, object):
@@ -117,12 +125,14 @@ class Search_service (httpService.Http_service):
 
 class View_service (httpService.Http_service):
 
+    ## Constructor.
     def __init__(self, url):
         self.url = url
 
-    ## Create a dictionary of HTTP protocol to view a file.
+    ## View file service.
     # @param params dict of params that the function needs
-    # @param object of a class to use other functions
+    # Create a dictionary of HTTP protocol to view a file
+    # by asking a file from node server 
     def service(self, params, object):
         if params['nodes'] != {}:
             pars_uri = urlparse.parse_qs(params['uri'][11:])
@@ -151,15 +161,16 @@ class View_service (httpService.Http_service):
             }
         return ret
 
-
+## Search form.
 class Form_service (httpService.Http_service):
 
+    ## Constructor.
     def __init__(self, base):
         self.base = base
 
-    ## create a dictionary of HTTP protocol to open a file.
+    ## Search form service.
     # @param params dict of params that the function needs
-    # @param object of a class to use other functions
+    # create a dictionary of HTTP protocol to open a file.
     def service(self, params, object):
         pars_uri = urlparse.parse_qs(params['uri'][6:])
         ret = {
@@ -172,12 +183,16 @@ class Form_service (httpService.Http_service):
         }
         return ret
 
+## A multicast listener.
+class Listener (httpService.Http_service):
 
-class Listener (httpService.Http_service, object):
-
+    ## Constructor.
     def __init__(self):
         pass
 
+    ## Listener service.
+    # @param params dict of params that the function needs
+    # listen to multicast and gets node servers's info
     def service(self, params, object):
         s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
 
@@ -197,6 +212,9 @@ class Listener (httpService.Http_service, object):
         except socket.timeout as e:
             print e
 
+    ## Substraction of nodes .
+    # @param dict of nodes
+    # Substract nodes that didn't appear for 10 sec.
     def sub_nodes(self, nodes):
         subs = []
         t = datetime.datetime.now().time()
@@ -209,6 +227,12 @@ class Listener (httpService.Http_service, object):
         for sub in subs:
             nodes.pop(sub)
 
+    ## Node list maker/refresher.
+    # @param ip address of the node
+    # @param port of the node
+    # @param dict of nodes
+    # @param object of a class to use other functions
+    # Make/refresh a node list from the data in multicast
     def node_list(self, ip, port, nodes, object):
         t = datetime.datetime.now().time()
         node = '%s:%s' % (ip, port)
