@@ -1,12 +1,14 @@
 
 import os
 
-
+## Memory map.
 class Memory(object):
 
+    ## Constractor.
     def __init__(self, args):
         self.directory = args.directory
 
+    ## Memory  map maker.
     def mem_list(self):
         mem = []
         for root, directories, filenames in os.walk(self.directory):
@@ -14,6 +16,7 @@ class Memory(object):
                 mem.append({'root': root, 'filename': filename})
         return mem
 
+    ## Name search in memory.
     def find_name(self, mem, name):
         files = []
         ids = []

@@ -6,16 +6,22 @@ import os
 from ..common import httpService
 from ..common import xml_funcs
 
-MYPORT = 8123
+## multicast port
+MULTI_PORT = 8123
+## multicast ip address
 IP = '225.0.0.250'
+## how much connections on multicast
 MYTTL = 1
 
-
+##Search service.
 class Search_service (httpService.Http_service):
 
+    ## Constructor.
     def __init__(self, memory):
         self.memory = memory
 
+    ## Search service.
+    # @param params dict of params that the function needs
     def service(self, params, object):
         pars_uri = urlparse.parse_qs(params['uri'][8:])
         files, ids = object.find_name(self.memory, pars_uri.get('Search')[0])
@@ -32,6 +38,10 @@ class Search_service (httpService.Http_service):
         }
         return ret
 
+    ## Find file names.
+    # @param list of a memory map
+    # #param string of a search ask
+    # searching in memory map for a right file names.
     def find_name(self, mem, name):
         files = []
         ids = []
@@ -41,12 +51,16 @@ class Search_service (httpService.Http_service):
                 ids.append(i)
         return files, ids
 
-
+## Id search of files.
 class Id_service (httpService.Http_service):
 
+    ## Constructor.
     def __init__(self, memory):
         self.memory = memory
 
+    ## Id search service.
+    # @param params dict of params that the function needs
+    # get a file from the right place in the memory by id
     def service(self, params, object):
         pars_uri = urlparse.parse_qs(params['uri'][10:])
         file_name = os.path.join(
@@ -63,14 +77,18 @@ class Id_service (httpService.Http_service):
         }
         return ret
 
-
+## Multicast sender
 class Sender (httpService.Http_service):
 
+    ## Constructor.
     def __init__(self):
         pass
 
+    ## Multicast sender service.
+    # @param params dict of params that the function needs
+    # sending a port to front server by multicast
     def service(self, params, object):
         s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
 
         s.setsockopt(socket.IPPROTO_IP, socket.IP_MULTICAST_TTL, 1)
-        s.sendto('node,%s' % (params['port']), (IP, MYPORT))
+        s.sendto('node,%s' % (params['port']), (IP, MULTI_PORT))
