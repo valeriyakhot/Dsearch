@@ -1,12 +1,18 @@
 
 import xml.etree.cElementTree as ET
 
-
+## Xml functions.
 class Xml(object):
 
+    ## Constructor.
     def __init__(self):
         pass
 
+    ## Xml maker to html.
+    # @param string of xml form
+    # @param string of node ip:port
+    # go through the xml string 
+    # make a html table form
     def xml_to_html(self, st, node):
         st = str(st)
         root = ET.fromstring(st)
@@ -25,6 +31,11 @@ class Xml(object):
                         </tr>''' % (name, id, node, id, node)
         return html
 
+    ## Xml form creator.
+    # @param list of file names
+    # @param list of ids
+    # make an xml form with file names 
+    # and their ids
     def xml_form(self, files, ids):
         root = ET.Element('root')
 

@@ -10,13 +10,16 @@ from . import util
 from . import httpService
 
 
+## Http server
 class Http_server(object):
 
+    ## Constructor.
     def __init__(self, ip, port):
         self.services = {}
         self.bind_address = ip
         self.bind_port = port
 
+    ## Check http ask.   
     def check(self, s, rest):
         req, rest = util.recv_line(s, rest)
         req_comps = req.split(' ', 2)
@@ -35,14 +38,18 @@ class Http_server(object):
             raise RuntimeError("Invalid URI")
         return uri
 
+    ## Convert headers to string.
     def str_headers(self, headers):
         head = ""
         for key, val in headers.iteritems():
             head += "%s: %s\r\n" % (key, val)
         return head
 
+    ## Http message builder.
+    # @param socket to send a message
+    # @param dict of http ask
+    # run all over the dict and build a right http message
     def build_message(self, s, dic, object):
-
         if 'content' in dic:
             dic['headers']['Content-Length'] = len(dic.get('content'))
         try:
@@ -75,11 +82,18 @@ class Http_server(object):
             if 'file_name' in dic:
                 f.close()
 
+    ## Registry of http services.
+    # @param string of the servise's uri
+    # @param httpService object 
     def register(self, uri, service_obj):
         Service = httpService.Http_service()
         Service = service_obj
         self.services[uri] = Service
 
+    ## Checking the uri service.
+    # @param dict of params for service func
+    # @param string of uri
+    # checking the uri and run the right http service
     def uri_check(self, dic, uri):
         if uri is None:
             pass
@@ -98,6 +112,7 @@ class Http_server(object):
                 }
         return ret
 
+    ## Http service.
     def server(self, object):
         print('start')
         nodes = {}
