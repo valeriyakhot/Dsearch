@@ -62,11 +62,6 @@ def parse_args():
         required=True,
         help='URL to use',
     )
-    parser.add_argument(
-        '--func',
-        default='front',
-        help='URL to use',
-    )
     return parser.parse_args()
 
 
