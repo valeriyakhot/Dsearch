@@ -34,11 +34,6 @@ def parse_args():
         default='./',
         help='Base directory to search fils in, default: %(default)s',
     )
-    parser.add_argument(
-        '--func',
-        default='node',
-        help='URL to use',
-    )
     args = parser.parse_args()
     return args
 
