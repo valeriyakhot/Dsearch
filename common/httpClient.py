@@ -32,6 +32,16 @@ class Client(object):
                     self.ip,
                     self.port,
                 ))
+                print (
+                        (
+                            'GET %s HTTP/1.1\r\n'
+                            'Host: %s\r\n'
+                            '\r\n'
+                        ) % (
+                            uri,
+                            self.url + uri,
+                        )
+                    ).encode('utf-8')
                 util.send_all(
                     s,
                     (
