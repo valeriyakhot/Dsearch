@@ -43,7 +43,7 @@ def parse_args():
     parser = argparse.ArgumentParser()
     parser.add_argument(
         '--base',
-        default='./Dsearch/front/%s',
+        default='./Dsearch-master/front/%s',
         help='Base directory to search fils in, default: %(default)s',
     )
     parser.add_argument(
