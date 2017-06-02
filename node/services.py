@@ -23,10 +23,11 @@ class Search_service (httpService.Http_service):
     ## Search service.
     # @param params dict of params that the function needs
     def service(self, params, object):
+        node = '%s:%s' % (object.my_ip(), params['port'])
         pars_uri = urlparse.parse_qs(params['uri'][8:])
         files, ids = object.find_name(self.memory, pars_uri.get('Search')[0])
         xml = xml_funcs.Xml()
-        output = xml.xml_form(files, ids)
+        output = xml.xml_form(files, ids, node)
 
         ret = {
             'status': '200',
@@ -37,6 +38,12 @@ class Search_service (httpService.Http_service):
             'content': output,
         }
         return ret
+        
+    ## Give computer ip.
+    def my_ip(self):
+        s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+        s.connect(('192.0.0.8', 1027))
+        return s.getsockname()[0]
 
     ## Find file names.
     # @param list of a memory map
