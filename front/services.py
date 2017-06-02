@@ -8,6 +8,7 @@ from ..common import xml_funcs
 from ..common import httpService
 from . import node_client
 
+SEARCH_FORM = 'search_form.html'
 ## the uri of id service of nodes
 URI_SEARCH = '/search?Search='
 ## the uri of id service of nodes
@@ -98,9 +99,8 @@ class Search_service (httpService.Http_service):
             )
             output = HTML_TABLE_HEADER
             xml = xml_funcs.Xml()
-            for key in params['nodes']:
-                for o in out:
-                    output += xml.xml_to_html(o, key)
+            for o in out:
+                output += xml.xml_to_html(o)
             output += '''<a href="/form?file=search_form.html">
                                 &lt;Back&gt;</a>'''+HTML_END
             ret = {
@@ -122,7 +122,7 @@ class Search_service (httpService.Http_service):
             }
         return ret
 
-
+## View file.
 class View_service (httpService.Http_service):
 
     ## Constructor.
@@ -172,11 +172,11 @@ class Form_service (httpService.Http_service):
     # @param params dict of params that the function needs
     # create a dictionary of HTTP protocol to open a file.
     def service(self, params, object):
-        pars_uri = urlparse.parse_qs(params['uri'][6:])
+        #pars_uri = urlparse.parse_qs(params['uri'][6:])
         ret = {
             'status': '200',
             'message': 'OK',
-            'file_name': self.base % pars_uri.get('f')[0],
+            'file_name': self.base % SEARCH_FORM,
             'headers': {
                 'Content-Type': 'text/html',
             }

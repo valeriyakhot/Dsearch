@@ -43,7 +43,7 @@ def parse_args():
     parser = argparse.ArgumentParser()
     parser.add_argument(
         '--base',
-        default='./Dsearch-master/front/%s',
+        default='./Dsearch/front/%s',
         help='Base directory to search fils in, default: %(default)s',
     )
     parser.add_argument(
@@ -74,7 +74,7 @@ def main():
     search = services.Search_service(args.url)
     listener = services.Listener()
     Server.register('/view_file?', view)
-    Server.register('/form?', form)
+    Server.register('/', form)
     Server.register('/download_file?', download)
     Server.register('/search?', search)
     Server.register('None?', listener)
