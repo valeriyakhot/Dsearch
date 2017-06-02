@@ -14,7 +14,7 @@ class Xml(object):
     # @param string of node ip:port
     # go through the xml string 
     # make a html table form
-    def xml_to_html(self, st, node):
+    def xml_to_html(self, st):
         st = str(st)
         html = ''
         try:
@@ -22,6 +22,7 @@ class Xml(object):
             for result in root.findall('result'):
                 name = result.get('name')
                 id = result.get('id')
+                node = result.get('node')
                 html += ''' <tr>
                             <td align="middle";
                             style="background-color:white">%s</td>
@@ -40,10 +41,10 @@ class Xml(object):
     # @param list of ids
     # make an xml form with file names 
     # and their ids
-    def xml_form(self, files, ids):
+    def xml_form(self, files, ids, nod):
         root = ET.Element('root')
 
         if len(files) > 0:
             for file, i in zip(files, ids):
-                ET.SubElement(root, 'result', name=file, id=str(i))
+                ET.SubElement(root, 'result', name=file, id=str(i), node=nod)
         return ET.tostring(root)

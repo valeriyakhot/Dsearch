@@ -95,12 +95,14 @@ class Http_server(object):
     # @param string of uri
     # checking the uri and run the right http service
     def uri_check(self, dic, uri):
-        if uri is None:
+        if uri == None:
             pass
         else:
             ser = uri.split('?')[0]+'?'
             if ser in self.services:
                 ret = self.services[ser].service(dic, self.services[ser])
+            elif uri == '/':
+                ret = self.services['/'].service(dic, self.services['/'])
             else:
                 ret = {
                     'code': 404,
@@ -147,7 +149,8 @@ class Http_server(object):
                         uri = object.check(s, rest)
                         dic = {
                             'uri': uri,
-                            'nodes': nodes
+                            'nodes': nodes,
+                            'port': self.bind_port
                         }
                         message = object.uri_check(dic, uri)
 
